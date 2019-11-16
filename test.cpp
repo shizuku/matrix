@@ -20,6 +20,6 @@ int main()
 	std::cout << "" << (y0 - x0) / double(CLOCKS_PER_SEC) << "(s)\n";
 	std::cout << "" << (y1 - x1) / double(CLOCKS_PER_SEC) << "(s)\n";
 	
-	system("pause");
+	//system("pause");
 	return 0;
 }
