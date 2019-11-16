@@ -139,23 +139,14 @@ template<size_t _A, size_t _B, size_t _C, typename _Ty>
 la::matrix<_A, _C, _Ty>* dot(la::matrix<_A, _B, _Ty>& a, la::matrix<_B, _C, _Ty>& b) {
 	la::matrix<_A, _C, _Ty>* s = new la::matrix<_A, _C, _Ty>();
 	
-	/*for (int i = 1; i <= _A; i++) {
+	for (int i = 1; i <= _A; i++) {
 		for (int j = 1; j <= _C; j++) {
 			for (int k = 1; k <= _B; k++) {
 				s->at(i, j) += a.at(i, k) * b.at(k, j);
 			}
 		}
-	}*/
-
-	for (int k = 1; k <= _B; k++) {
-		for (int i = 1; i <= _A; i++) {
-			_Ty r = a.at(i, k);
-			for (int j = 1; j <= _C; j++) {
-				s->at(i, j) += r * b.at(k, j);
-			}
-		}
 	}
-	
+
 	/*auto q = [&](int x,int y) {
 		for (int i = x; i <= y; i++) {
 			for (int j = 1; j <= _C; j++) {
