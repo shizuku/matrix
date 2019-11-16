@@ -1,8 +1,12 @@
 #pragma once
+#include <thread>
+#include <thread>
 #include <vector>
 #include <iostream>
 #include <string>
 
+
+const int cores = 4;
 namespace la {
 template<size_t _M, size_t _N, typename _T = double>
 class matrix {
@@ -76,12 +80,13 @@ std::ostream& operator<<(std::ostream& ostr, la::matrix<_A, _B,_Ty>& a) {
 		p3 = _A / 2;
 		p4 = p3 + 1;
 	}
-	ostr << "[\n";
+	char h = '[';
 	for (int i = 1; i <= p3; i++) {
+		ostr << h;
+		if (i == 1) h = ' ';
 		ostr << "[";
 		for (int j = 1; j <= p1; j++) {
-			ostr << a.at(i, j);
-			ostr << "\t";
+			ostr << a.at(i, j) << "\t";
 		}
 		ostr << x;
 		for (int j = p2; j <= _B; j++) {
@@ -91,12 +96,11 @@ std::ostream& operator<<(std::ostream& ostr, la::matrix<_A, _B,_Ty>& a) {
 		}
 		ostr << "]\n";
 	}
-	ostr << y;
+	ostr << h << y;
 	for (int i = p4; i <= _A; i++) {
-		ostr << "[";
+		ostr << h << "[";
 		for (int j = 1; j <= p1; j++) {
-			ostr << a.at(i, j);
-			ostr << "\t";
+			ostr << a.at(i, j) << "\t";
 		}
 		ostr << x;
 		for (int j = p2; j <= _B; j++) {
@@ -104,10 +108,10 @@ std::ostream& operator<<(std::ostream& ostr, la::matrix<_A, _B,_Ty>& a) {
 			if (j != _B)
 			ostr << "\t";
 		}
-		ostr << "]\n";
+		ostr << "]";
+		if(i!=_A)ostr << "\n";
 	}
-	ostr << "]";
-	ostr << _A << "*" << _B << "\n";
+	ostr << "] " << _A << "*" << _B << "\n";
 	return ostr;
 }
 
@@ -133,27 +137,53 @@ la::matrix<_A, _B,_Ty> operator-(la::matrix<_A, _B,_Ty>& a, la::matrix<_A, _B,_T
 }
 
 template<size_t _A, size_t _B, size_t _C, typename _Ty>
-la::matrix<_A, _C, _Ty>* dot(la::matrix<_A, _B, _Ty>*& a, la::matrix<_B, _C, _Ty>*& b) {
-	la::matrix<_A, _C, _Ty>* s = new la::matrix<_A, _C, _Ty>();
-	for (int i = 1; i <= _A; i++) {
-		for (int j = 1; j <= _C; j++) {
-			for (int k = 1; k <= _B; k++) {
-				s->at(i, j) += a->at(i, k) * b->at(k, j);
-			}
-		}
-	}
-	return s;
-}
-
-template<size_t _A, size_t _B, size_t _C, typename _Ty>
 la::matrix<_A, _C, _Ty>* dot(la::matrix<_A, _B, _Ty>& a, la::matrix<_B, _C, _Ty>& b) {
 	la::matrix<_A, _C, _Ty>* s = new la::matrix<_A, _C, _Ty>();
-	for (int i = 1; i <= _A; i++) {
+	
+	/*for (int i = 1; i <= _A; i++) {
 		for (int j = 1; j <= _C; j++) {
 			for (int k = 1; k <= _B; k++) {
 				s->at(i, j) += a.at(i, k) * b.at(k, j);
 			}
 		}
+	}*/
+
+	for (int k = 1; k <= _B; k++) {
+		for (int i = 1; i <= _A; i++) {
+			_Ty r = a.at(i, k);
+			for (int j = 1; j <= _C; j++) {
+				s->at(i, j) += r * b.at(k, j);
+			}
+		}
 	}
+	
+	/*auto q = [&](int x,int y) {
+		for (int i = x; i <= y; i++) {
+			for (int j = 1; j <= _C; j++) {
+				for (int k = 1; k <= _B; k++) {
+					s->at(i, j) += a.at(i, k) * b.at(k, j);
+				}
+			}
+		}
+	};
+	std::vector<int> it = std::vector<int>(cores*2);
+	std::vector<std::thread> pool;
+	it[0] = 1;
+	it[1] = _A/cores;
+	for (int i = 2; i < cores*2-2; i+=2) {
+		it[i] = it[i - 1] + 1;
+		it[i + 1] = it[i - 1] + _A / cores;
+	}
+	it[cores * 2 - 2] = it[cores * 2 - 3] + 1;
+	it[cores * 2 - 1] = _A;
+	for (int i = 0; i < cores; i++) {
+		pool.push_back(std::thread(q, it[i * 2], it[i * 2 + 1]));
+	}
+	for (auto i = pool.begin(); i != pool.end(); ++i) {
+		i->join();
+	}*/
+	
 	return s;
 }
+template<size_t _A, size_t _B, size_t _C, typename _Ty>
+inline la::matrix<_A, _C, _Ty>* dot(la::matrix<_A, _B, _Ty>*& a, la::matrix<_B, _C, _Ty>*& b) { return dot(*a, *b); }
