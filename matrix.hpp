@@ -1,11 +1,11 @@
 #pragma once
-#include <thread>
 #include <vector>
 #include <iostream>
 #include <string>
+#include <thread>
+#include <Windows.h>
 
-
-const int cores = 4;
+const int cores = 8;
 namespace la {
 template<size_t _M, size_t _N, typename _T = double>
 class matrix {
@@ -55,25 +55,63 @@ public:
 	_T& at(size_t m, size_t n) {
 		return s[m - 1][n - 1];
 	}
+	_T sum() {
+		_T r = _T();
+		for (int i = 0; i < _M; ++i) {
+			for (int j = 0; j < _N; ++j) {
+				r += s[i][j] ;
+			}
+		}
+		return r;
+	}
+	void save_as(std::string filename) {
+		std::ofstream of(filename);
+		for (int i = 0; i < _M; ++i) {
+			for (int j = 0; j < _N; ++j) {
+				of << s[i][j] << " ";
+			}
+		}
+	}
+	void read_from(std::string filename) {
+		std::ifstream of(filename);
+		for (int i = 0; i < _M; ++i) {
+			for (int j = 0; j < _N; ++j) {
+				of >> s[i][j];
+			}
+		}
+	}
 private:
 	_T s[_M][_N];
 };
 };
+
+const int wdt = 10;
+
 template<size_t _A, size_t _B, typename _Ty>
-std::ostream& operator<<(std::ostream& ostr, la::matrix<_A, _B,_Ty>& a) {
+int print(HDC hdc, la::matrix<_A, _B, _Ty>& a) {
+	for (int i = 1; i <= _A; i++) {
+		for (int j = 1; j <= _B; j++) {
+			SelectObject(hdc, CreateSolidBrush(RGB(255-a.at(i, j), 255-a.at(i, j), 255-a.at(i, j))));
+			Rectangle(hdc, j * wdt, i * wdt, (j + 1) * wdt - 1, (i + 1) * wdt - 1);
+		}
+	}
+	return 0;
+}
+template<size_t _A, size_t _B, typename _Ty>
+std::ostream& print(std::ostream& ostr, la::matrix<_A, _B, _Ty>& a, int b) {
 	int p1 = 0, p2 = 0, p3 = 0, p4 = 0;
 	std::string x = "", y = "";
-	if (_B >= 10) {
-		p1 = 5, p2 = _B-5;
+	if (b&&_B >= 10) {
+		p1 = 5, p2 = _B - 5;
 		x = "...\t";
 	}
 	else {
 		p1 = _B / 2;
 		p2 = p1 + 1;
 	}
-	if (_A >= 10) {
-		p3 = 5, p4 = _A-5;
-		y = "...\n";
+	if (b&&_A >= 10) {
+		p3 = 5, p4 = _A - 5;
+		y = " ...\n";
 	}
 	else {
 		p3 = _A / 2;
@@ -83,21 +121,7 @@ std::ostream& operator<<(std::ostream& ostr, la::matrix<_A, _B,_Ty>& a) {
 	for (int i = 1; i <= p3; i++) {
 		ostr << h;
 		if (i == 1) h = ' ';
-		ostr << "[";
-		for (int j = 1; j <= p1; j++) {
-			ostr << a.at(i, j) << "\t";
-		}
-		ostr << x;
-		for (int j = p2; j <= _B; j++) {
-			ostr << a.at(i, j);
-			if(j!= _B)
-			ostr << "\t";
-		}
-		ostr << "]\n";
-	}
-	ostr << h << y;
-	for (int i = p4; i <= _A; i++) {
-		ostr << h << "[";
+		ostr << "[\t";
 		for (int j = 1; j <= p1; j++) {
 			ostr << a.at(i, j) << "\t";
 		}
@@ -105,13 +129,31 @@ std::ostream& operator<<(std::ostream& ostr, la::matrix<_A, _B,_Ty>& a) {
 		for (int j = p2; j <= _B; j++) {
 			ostr << a.at(i, j);
 			if (j != _B)
-			ostr << "\t";
+				ostr << "\t";
 		}
-		ostr << "]";
-		if(i!=_A)ostr << "\n";
+		ostr << "\t]\n";
+	}
+	ostr  << y;
+	for (int i = p4; i <= _A; i++) {
+		ostr << h << "[\t";
+		for (int j = 1; j <= p1; j++) {
+			ostr << a.at(i, j) << "\t";
+		}
+		ostr << x;
+		for (int j = p2; j <= _B; j++) {
+			ostr << a.at(i, j);
+			if (j != _B)
+				ostr << "\t";
+		}
+		ostr << "\t]";
+		if (i != _A)ostr << "\n";
 	}
 	ostr << "] " << _A << "*" << _B << "\n";
 	return ostr;
+}
+template<size_t _A, size_t _B, typename _Ty>
+std::ostream& operator<<(std::ostream& ostr, la::matrix<_A, _B,_Ty>& a) {
+	return print(ostr,a,0);
 }
 
 template<size_t _A, size_t _B,typename _Ty>
@@ -139,15 +181,15 @@ template<size_t _A, size_t _B, size_t _C, typename _Ty>
 la::matrix<_A, _C, _Ty>* dot(la::matrix<_A, _B, _Ty>& a, la::matrix<_B, _C, _Ty>& b) {
 	la::matrix<_A, _C, _Ty>* s = new la::matrix<_A, _C, _Ty>();
 	
-	for (int i = 1; i <= _A; i++) {
+	/*for (int i = 1; i <= _A; i++) {
 		for (int j = 1; j <= _C; j++) {
 			for (int k = 1; k <= _B; k++) {
 				s->at(i, j) += a.at(i, k) * b.at(k, j);
 			}
 		}
-	}
-
-	/*auto q = [&](int x,int y) {
+	}*/
+	
+	auto q = [&](int x,int y) {
 		for (int i = x; i <= y; i++) {
 			for (int j = 1; j <= _C; j++) {
 				for (int k = 1; k <= _B; k++) {
@@ -171,7 +213,7 @@ la::matrix<_A, _C, _Ty>* dot(la::matrix<_A, _B, _Ty>& a, la::matrix<_B, _C, _Ty>
 	}
 	for (auto i = pool.begin(); i != pool.end(); ++i) {
 		i->join();
-	}*/
+	}
 	
 	return s;
 }
