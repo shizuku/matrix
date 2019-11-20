@@ -8,60 +8,48 @@
 const int cores = 8;
 
 namespace la {
-template<size_t _M, size_t _N, typename _T = double>
+template<size_t _M, size_t _N, typename _Ty = double>
 class matrix {
 public:
-	//using difference_type = typename matrix::difference_type;
 	matrix() {
-		head = new _T[_M * _N]();
+		head = new _Ty[_M * _N]();
 		tail = head + _M * _N;
 		fill();
 	}
-	matrix(std::vector<_T>& a) {
-		head = new _T[_M * _N]();
+	matrix(const std::vector<_Ty>& a) {
+		head = new _Ty[_M * _N]();
 		tail = head + _M * _N;
 		fill(a);
 	}
-	matrix(const matrix<_M, _N, _T>& src) {
-		head = new _T[_M * _N]();
+	matrix(const matrix<_M, _N, _Ty>& src) {
+		head = new _Ty[_M * _N]();
 		tail = head + _M * _N;
 		auto j = this->begin();
 		for (auto i = src.cbegin(); i != src.cend(); ++i,++j) {
 			*j = *i;
 		}
 	}
-	matrix(const matrix<_M, _N, _T>&& src) noexcept{
-		head = new _T[_M * _N]();
+	matrix(const matrix<_M, _N, _Ty>&& src) noexcept{
+		head = new _Ty[_M * _N]();
 		tail = head + _M * _N;
 		auto j = this->begin();
 		for (auto i = src.cbegin(); i != src.cend(); ++i,++j) {
 			*j = *i;
 		}
-	}
-	matrix<_M, _N, _T>& operator=(const matrix<_M, _N, _T>& src){
-		if (this == &src) {
-			return *this;
-		}
-		for (int i = 0; i < _M; i++) {
-			for (int j = 0; j < _N; j++) {
-				fat(i, j) = src.fcat(i,j);
-			}
-		}
-		return *this;
 	}
 	~matrix() { delete [] head; }
 
 	class const_iterator {
 	public:
-		const_iterator(_T* i) : item(i) {}
+		const_iterator(_Ty* i) : item(i) {}
 
-		const _T& operator*() const {
+		const _Ty& operator*() const {
 			return *item;
 		}
-		const _T* operator->() const {
+		const _Ty* operator->() const {
 			return item;
 		}
-		const _T& operator[](const size_t _Off) const {
+		const _Ty& operator[](const size_t _Off) const {
 			return *(item + _Off);
 		}
 
@@ -121,30 +109,21 @@ public:
 		}
 
 	private:
-		_T* item;
+		_Ty* item;
 	};
 	class iterator {
 	public:
-		iterator(_T* i) : item(i) {}
+		iterator(_Ty* i) : item(i) {}
 
-		_T& operator*() {
+		_Ty& operator*() {
 			return *item;
 		}
-		/*const _T& operator*() const {
-			return *item;
-		}*/
-		_T* operator->() {
+		_Ty* operator->() {
 			return item;
 		}
-		/*const _T* operator->() const {
-			return item;
-		}*/
-		_T& operator[](const size_t _Off) {
+		_Ty& operator[](const size_t _Off) {
 			return *(item + _Off);
 		}
-		/*const _T& operator[](const size_t _Off) const {
-			return *(item + _Off);
-		}*/
 
 		iterator& operator++(){
 			++item;
@@ -202,17 +181,17 @@ public:
 		}
 
 	private:
-		_T* item;
+		_Ty* item;
 	};
 
 	void fill() {
 		for (int i = 0; i < _M; i++) {
 			for (int j = 0; j < _N; j++) {
-				at(i, j) = 0;
+				at(i, j) = _Ty();
 			}
 		}
 	}
-	void fill(std::vector<_T>& a) {
+	void fill(const std::vector<_Ty>& a) {
 		int size = a.size();
 		int k = 0;
 		for (int i = 0; i < _M; i++) {
@@ -229,8 +208,8 @@ public:
 		}
 	}
 
-	_T& at(size_t m, size_t n) {
-		_T* r = (head + (m * _N + n));
+	_Ty& at(size_t m, size_t n) {
+		_Ty* r = (head + (m * _N + n));
 		if (r < tail && r >= head) {
 			return *r;
 		}
@@ -238,11 +217,11 @@ public:
 			throw std::out_of_range("matrix out of range");
 		}
 	}
-	_T& fat(size_t m, size_t n) {
+	_Ty& fat(size_t m, size_t n) {
 		return *(head + (m * _N + n));
 	}
-	const _T& cat(size_t m, size_t n) const {
-		_T* r = (head + (m * _N + n));
+	const _Ty& cat(size_t m, size_t n) const {
+		_Ty* r = (head + (m * _N + n));
 		if (r < tail && r >= head) {
 			return *r;
 		}
@@ -250,12 +229,12 @@ public:
 			throw std::out_of_range("matrix out of range");
 		}
 	}
-	const _T& fcat(size_t m, size_t n) const {
+	const _Ty& fcat(size_t m, size_t n) const {
 		return *(head + (m * _N + n));
 	}
 	
-	_T sum() {
-		_T r = _T();
+	_Ty sum() {
+		_Ty r = _Ty();
 		for (int i = 0; i < _M; ++i) {
 			for (int j = 0; j < _N; ++j) {
 				r += fat(i, j);
@@ -263,7 +242,7 @@ public:
 		}
 		return r;
 	}
-	inline const matrix<_N, _M, _T> transposition() const {
+	inline const matrix<_N, _M, _Ty> transposition() const {
 		return ~*this;
 	}
 
@@ -284,18 +263,29 @@ public:
 		}
 	}
 
-	const matrix<_M, _N, _T> operator+() const {
+	matrix<_M, _N, _Ty>& operator=(const matrix<_M, _N, _Ty>& src) {
+		if (this == &src) {
+			return *this;
+		}
+		for (int i = 0; i < _M; i++) {
+			for (int j = 0; j < _N; j++) {
+				fat(i, j) = src.fcat(i, j);
+			}
+		}
 		return *this;
 	}
-	const matrix<_M, _N, _T> operator-() const {
-		matrix<_M, _N, _T> tmp(*this);
+	const matrix<_M, _N, _Ty> operator+() const {
+		return *this;
+	}
+	const matrix<_M, _N, _Ty> operator-() const {
+		matrix<_M, _N, _Ty> tmp(*this);
 		for (auto i = tmp.begin(); i != tmp.end(); ++i) {
 			*i = -*i;
 		}
 		return tmp;
 	}
-	const matrix<_N, _M, _T> operator~() const {
-		matrix<_N, _M, _T> s = matrix<_N, _M, _T>();
+	const matrix<_N, _M, _Ty> operator~() const {
+		matrix<_N, _M, _Ty> s = matrix<_N, _M, _Ty>();
 		for (int i = 0; i < _N; i++) {
 			for (int j = 0; j < _M; j++) {
 				s.fat(i, j) = this->fcat(j, i);
@@ -303,22 +293,22 @@ public:
 		}
 		return s;
 	}
-	matrix<_M, _N, _T>& operator+=(const matrix<_M, _N, _T> src) {
+	matrix<_M, _N, _Ty>& operator+=(const matrix<_M, _N, _Ty> src) {
 		return *this = *this + src;
 	}
-	matrix<_M, _N, _T>& operator-=(const matrix<_M, _N, _T> src) {
+	matrix<_M, _N, _Ty>& operator-=(const matrix<_M, _N, _Ty> src) {
 		return *this = *this - src;
 	}
 	template<class _TTy>
-	matrix<_M, _N, _T>& operator*=(const _TTy src) {
-		return *this = *this * _T(src);
+	matrix<_M, _N, _Ty>& operator*=(const _TTy src) {
+		return *this = *this * _Ty(src);
 	}
 	template<class _TTy>
-	matrix<_M, _N, _T>& operator/=(const _TTy src) {
-		return *this = *this / _T(src);
+	matrix<_M, _N, _Ty>& operator/=(const _TTy src) {
+		return *this = *this / _Ty(src);
 	}
-	template<size_t _A, typename _T>
-	matrix<_A, _A, _T>& operator%=(const matrix<_A, _A, _T> src) {
+	template<size_t _A, typename _Ty>
+	matrix<_A, _A, _Ty>& operator%=(const matrix<_A, _A, _Ty> src) {
 		return *this = *this % src;
 	}
 
@@ -332,8 +322,8 @@ public:
 	const matrix::const_iterator crend() const { return const_iterator(head - 1); }
 
 private:
-	_T* head;
-	_T* tail;
+	_Ty* head;
+	_Ty* tail;
 };
 
 template<size_t _A, size_t _B, typename _Ty>
