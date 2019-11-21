@@ -492,4 +492,20 @@ const la::matrix<_A, _B, _Ty> transposition(const la::matrix<_B, _A, _Ty>& x) {
 	return ~x;
 }
 
+template<size_t _A, size_t _B, size_t _C, size_t _D, typename _Ty>
+const la::matrix<_A, _B, _Ty> reshape(const la::matrix<_C, _D, _Ty>& x) {
+	if (_A * _B == _C * _D) {
+		la::matrix<_A, _B, _Ty> r = la::matrix<_A, _B, _Ty>();
+		auto i = r.begin();
+		auto j = x.cbegin();
+		for (; i != r.end(); ++i, ++j) {
+			*i = *j;
+		}
+		return r;
+	}
+	else {
+		throw std::out_of_range(" ");
+	}
+}
+
 };
