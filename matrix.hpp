@@ -184,6 +184,9 @@ public:
 		_Ty* item;
 	};
 
+	inline void clear() {
+		fill();
+	}
 	void fill() {
 		for (int i = 0; i < _M; i++) {
 			for (int j = 0; j < _N; j++) {
@@ -238,6 +241,27 @@ public:
 		for (int i = 0; i < _M; ++i) {
 			for (int j = 0; j < _N; ++j) {
 				r += fat(i, j);
+			}
+		}
+		return r;
+	}
+	size_t max_index() {
+		size_t r = 0;
+		size_t j = 1;
+		_Ty k = *head;
+		for (auto i = cbegin() + 1; i != cend(); ++i,++j) {
+			if (*i > k) {
+				k = *i;
+				r = j;
+			}
+		}
+		return r;
+	}
+	_Ty maximum(){
+		_Ty r = *head;
+		for (auto i = cbegin()+1; i != cend(); ++i) {
+			if (*i > r) {
+				r = *i;
 			}
 		}
 		return r;
@@ -363,12 +387,33 @@ inline la::matrix<_A, _B, _Ty> operator*(const _T& b, const la::matrix<_A, _B, _
 	return operator*(a,b);
 }
 
+template<size_t _A, size_t _B ,typename _Ty>
+la::matrix<_A, _B, _Ty> operator*(const la::matrix<_A, _B, _Ty>& a, const la::matrix<_A, _B, _Ty>& b) {
+	la::matrix<_A, _B, _Ty> r{};
+	for (int i = 0; i < _A; ++i) {
+		for (int j = 0; j < _B; ++j) {
+			r.fat(i, j) = a.fcat(i, j) * b.fcat(i, j);
+		}
+	}
+	return r;
+}
+
 template<size_t _A, size_t _B, typename _Ty, typename _T>
 la::matrix<_A, _B, _Ty> operator/(const la::matrix<_A, _B, _Ty>& a, const _T& b) {
 	la::matrix<_A, _B, _Ty> s = la::matrix<_A, _B, _Ty>();
 	for (int i = 0; i < _A; i++) {
 		for (int j = 0; j < _B; j++) {
 			s.fat(i, j) = a.fcat(i, j) / _Ty(b);
+		}
+	}
+	return s;
+}
+template<size_t _A, size_t _B, typename _Ty, typename _T>
+la::matrix<_A, _B, _Ty> operator/( const _T& b, const la::matrix<_A, _B, _Ty>& a) {
+	la::matrix<_A, _B, _Ty> s = la::matrix<_A, _B, _Ty>();
+	for (int i = 0; i < _A; i++) {
+		for (int j = 0; j < _B; j++) {
+			s.fat(i, j) = _Ty(b) / a.fcat(i, j);
 		}
 	}
 	return s;
@@ -473,7 +518,7 @@ std::ostream& print(std::ostream& ostr, const la::matrix<_A, _B, _Ty>& a, int b)
 }
 
 template<size_t _A, size_t _B, typename _Ty>
-std::ostream& operator<<(std::ostream& ostr, const la::matrix<_A, _B, _Ty>& a) { return print(ostr, a, 1); }
+std::ostream& operator<<(std::ostream& ostr, const la::matrix<_A, _B, _Ty>& a) { return print(ostr, a, 0); }
 
 const int wdt = 10;
 template<size_t _A, size_t _B, typename _Ty>
@@ -491,6 +536,35 @@ template<size_t _A, size_t _B, typename _Ty>
 const la::matrix<_A, _B, _Ty> transposition(const la::matrix<_B, _A, _Ty>& x) {
 	return ~x;
 }
+/*
+template<size_t _A, typename _Ty>
+const la::matrix<_A, _A, _Ty> identity(){
+	la::matrix<_A, _A, _Ty> r = la::matrix<_A, _A, _Ty>();
+	for (int i = 0; i < _A; ++i) {
+		r.fat(i, i) = 1;
+	}
+	return r;
+}
+*/
+template<size_t _A, typename _Ty>
+const la::matrix<_A, _A, _Ty> diag(const la::matrix<1, _A,_Ty>& src) {
+	la::matrix<_A, _A, _Ty> r{};
+	for (int i = 0; i < _A; i++) {
+		r.fat(i, i) = src.fcat(0, i);
+	}
+	return r;
+}
+
+template<size_t _A,size_t _B, typename _Ty>
+const la::matrix<_A, _B, _Ty> outer(const la::matrix<1, _A, _Ty>& a, const la::matrix<1, _B, _Ty>& b) {
+	la::matrix<_A, _B, _Ty> r{};
+	for (int i = 0; i < _A; ++i) {
+		for (int j = 0; j < _B; ++j) {
+			r.fat(i, j) = a.fcat(0, i) * b.fcat(0, j);
+		}
+	}
+	return r;
+}
 
 template<size_t _A, size_t _B, size_t _C, size_t _D, typename _Ty>
 const la::matrix<_A, _B, _Ty> reshape(const la::matrix<_C, _D, _Ty>& x) {
@@ -506,6 +580,55 @@ const la::matrix<_A, _B, _Ty> reshape(const la::matrix<_C, _D, _Ty>& x) {
 	else {
 		throw std::out_of_range(" ");
 	}
+}
+template<int _M, int _N, class _T>
+la::matrix<_M, _N, _T> power(const la::matrix<_M, _N, _T>& x, const int y) {
+	la::matrix<_M, _N, _T> r = la::matrix<_M, _N, _T>();
+	for (int i = 0; i < _M; i++) {
+		for (int j = 0; j < _N; j++) {
+			r.fat(i, j) = std::pow(x.fcat(i, j), y);
+		}
+	}
+	return r;
+}
+template<int _M, class _T>
+la::matrix<1, _M, _T> softmax(const la::matrix<1, _M, _T>& x) {
+	la::matrix<1, _M, _T> x_exp = la::matrix<1, _M, _T>();
+	la::matrix<1, _M, _T> r = la::matrix<1, _M, _T>();
+
+	for (int i = 0; i < _M; ++i) {
+		x_exp.fat(0, i) = exp(x.fcat(0, i));
+	}
+	_T sum_x_exp = x_exp.sum();
+	for (int i = 0; i < _M; ++i) {
+		r.fat(0, i) = x_exp.fcat(0, i) / sum_x_exp;
+	}
+	return r;
+}
+template<int _M, class _T>
+la::matrix<_M, _M, _T> dsoftmax(const la::matrix<1, _M, _T>& x) {
+	auto sm = softmax(x);
+	return la::diag(sm) - la::outer(sm, sm);
+}
+template<int _M, int _N, class _T>
+la::matrix<_M, _N, _T> cosh(const la::matrix<_M, _N, _T>& x) {
+	la::matrix<_M, _N, _T> r = la::matrix<_M, _N, _T>();
+	for (int i = 0; i < _M; i++) {
+		for (int j = 0; j < _N; j++) {
+			r.fat(i, j) = std::cosh(x.fcat(i, j));
+		}
+	}
+	return r;
+}
+template<int _M, int _N, class _T>
+la::matrix<_M, _N, _T> tanh(const la::matrix<_M, _N, _T>& x) {
+	la::matrix<_M, _N, _T> r = la::matrix<_M, _N, _T>();
+	for (int i = 0; i < _M; i++) {
+		for (int j = 0; j < _N; j++) {
+			r.fat(i, j) = std::tanh(x.fcat(i, j));
+		}
+	}
+	return r;
 }
 
 };
